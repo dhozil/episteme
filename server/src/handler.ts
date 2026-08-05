@@ -8,7 +8,7 @@ import {
   Verifier,
   isExecutionSuccess,
   executionError,
-} from "../../sdk/src/verifier";
+} from "../../sdk/src/verifier.js";
 
 export const CONTRACT =
   process.env.SERVER_CONTRACT ??

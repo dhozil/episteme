@@ -6,7 +6,7 @@
  */
 
 import http from "node:http";
-import { route, CONTRACT } from "./handler";
+import { route, CONTRACT } from "./handler.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
 

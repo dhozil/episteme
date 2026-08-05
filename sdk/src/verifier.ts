@@ -11,7 +11,7 @@ import type {
   VerifierConfig,
   VerifyOptions,
   WriteResult,
-} from "./types";
+} from "./types.js";
 
 const DEFAULT_ENDPOINT = "https://studio.genlayer.com/api";
 
