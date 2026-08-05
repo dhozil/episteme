@@ -1,0 +1,17 @@
+{
+  "name": "@verify/monitor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts loop",
+    "once": "tsx src/index.ts once"
+  },
+  "dependencies": {
+    "@verify/sdk": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

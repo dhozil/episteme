@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2c4670"/>
+      <stop offset="1" stop-color="#1b2c47"/>
+    </linearGradient>
+    <linearGradient id="sh" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#f0f3f7"/>
+      <stop offset="1" stop-color="#d3dbe6"/>
+    </linearGradient>
+    <linearGradient id="ln" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c49a3c"/>
+      <stop offset="1" stop-color="#8a6a20"/>
+    </linearGradient>
+    <radialGradient id="gl" cx="0.35" cy="0.2" r="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#tile)" stroke="rgba(185,138,47,0.4)" stroke-width="2"/>
+  <path d="M32 8 L49 17 V31 C49 44 41 50 32 54 C23 50 15 44 15 31 V17 Z" fill="url(#sh)"/>
+  <path d="M32 8 L49 17 V31 C49 44 41 50 32 54 C23 50 15 44 15 31 V17 Z" fill="url(#gl)"/>
+  <path d="M32 8 L49 17 V31 C49 44 41 50 32 54 C23 50 15 44 15 31 V17 Z" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="2"/>
+  <circle cx="32" cy="34" r="10" fill="url(#ln)" stroke="rgba(106,80,20,0.5)" stroke-width="2"/>
+  <circle cx="28.4" cy="30.4" r="2.6" fill="#fdf8ec" opacity="0.95"/>
+  <path d="M39.5 41.5l8 8" stroke="#8a6a20" stroke-width="6" stroke-linecap="round"/>
+  <path d="M39.5 41.5l8 8" stroke="rgba(255,255,255,0.55)" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

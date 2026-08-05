@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Builds
+frontend/dist/
+*.tsbuildinfo
+
+# Runtime / artifacts
+artifacts/
+*.log
+monitor/state.json
+
+# Environment (never commit secrets)
+.env
+.env.local
+frontend/.env
+monitor/.env
+server/.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

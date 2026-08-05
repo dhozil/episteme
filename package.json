@@ -1,0 +1,11 @@
+{
+  "name": "verify",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "sdk",
+    "frontend",
+    "monitor",
+    "server"
+  ]
+}
