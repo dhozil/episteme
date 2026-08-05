@@ -20,6 +20,12 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-243a5e" />
 </p>
 
+<p align="center">
+  <a href="https://episteme-verify.vercel.app"><strong>episteme-verify.vercel.app</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://explorer-studio.genlayer.com/address/0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff">Contract <code>0xE5C9A821…c17760ff</code> on GenLayer Studionet</a>
+</p>
+
 ---
 
 ## The thesis
@@ -251,7 +257,12 @@ In the frontend, **connect your wallet** — writes (verify, challenge, re-verif
 require it; reads are open. Pick a policy, load a sample, and verify. Track the
 transaction in the explorer directly from the decision record.
 
-**Deploy the contract:**
+**Live on Studionet:**
+
+- **Contract:** [`0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff`](https://explorer-studio.genlayer.com/address/0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff) — deployed with the five built-in policies; reuse it or deploy your own below.
+- **REST API:** `https://episteme-verify.vercel.app/api` — `GET /health`, `GET /policies`, `GET /verifications?limit=`, `GET /verification?id=`, `GET /policy?id=`, `POST /verify`, `POST /challenge`, `POST /reverify`.
+
+**Deploy your own contract:**
 
 ```bash
 genlayer deploy --contract contracts/verification_engine.py
