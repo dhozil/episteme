@@ -11,7 +11,11 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "scripts": {
+    "build:api": "node scripts/build-api.cjs"
+  },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.24.0"
   }
 }

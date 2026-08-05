@@ -1,11 +1,18 @@
 /**
- * Vercel serverless function — exposes the Episteme REST API at /api/*.
+ * Vercel serverless function entry — source of truth for api/[...all].js.
+ *
+ * The deployed function is a single self-contained CommonJS bundle produced
+ * by `npm run build:api` (esbuild). Bundling inlines genlayer-js so the
+ * function never does `require(esm)` at runtime; Vercel's function runtime
+ * rejects require() of ES Modules (ERR_REQUIRE_ESM), which crashed every
+ * request when the SDK was loaded from node_modules.
+ *
  * Reads and fast submits work within Vercel limits; consensus-waiting
  * endpoints (POST /verify/wait) may exceed the function timeout, so clients
  * should POST /verify (fast) and poll GET /verification/:id.
  */
 
-import { route, CONTRACT } from "../server/src/handler";
+import { route, CONTRACT } from "./handler.js";
 
 export const config = {
   maxDuration: 60,
