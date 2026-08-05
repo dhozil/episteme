@@ -38391,17 +38391,23 @@ async function route(req) {
     if (method === "GET" && path === "/policies") {
       return { status: 200, body: { policies: await verifier.getPolicyIds() } };
     }
-    const policyMatch = path.match(/^\/policy\/(.+)$/);
-    if (method === "GET" && policyMatch) {
-      return { status: 200, body: await verifier.getPolicy(policyMatch[1]) };
+    if (method === "GET" && path === "/policy") {
+      const policyId = req.search.get("id");
+      if (!policyId) {
+        return { status: 400, body: { error: "id query param is required" } };
+      }
+      return { status: 200, body: await verifier.getPolicy(policyId) };
     }
     if (method === "GET" && path === "/verifications") {
       const limit = Math.min(Number(req.search.get("limit") ?? 50) || 50, 50);
       return { status: 200, body: { verifications: await verifier.getRecentVerifications(limit) } };
     }
-    const verifMatch = path.match(/^\/verification\/(.+)$/);
-    if (method === "GET" && verifMatch) {
-      return { status: 200, body: await verifier.getVerification(verifMatch[1]) };
+    if (method === "GET" && path === "/verification") {
+      const verificationId = req.search.get("id");
+      if (!verificationId) {
+        return { status: 400, body: { error: "id query param is required" } };
+      }
+      return { status: 200, body: await verifier.getVerification(verificationId) };
     }
     if (method === "POST" && path === "/verify") {
       if (!body.question || !body.policyId || !Array.isArray(body.urls)) {

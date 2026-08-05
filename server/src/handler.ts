@@ -50,10 +50,13 @@ export async function route(req: RouteRequest): Promise<RouteResult> {
       return { status: 200, body: { policies: await verifier.getPolicyIds() } };
     }
 
-    // ---- GET /policy/:id
-    const policyMatch = path.match(/^\/policy\/(.+)$/);
-    if (method === "GET" && policyMatch) {
-      return { status: 200, body: await verifier.getPolicy(policyMatch[1]) };
+    // ---- GET /policy?id=:id
+    if (method === "GET" && path === "/policy") {
+      const policyId = req.search.get("id");
+      if (!policyId) {
+        return { status: 400, body: { error: "id query param is required" } };
+      }
+      return { status: 200, body: await verifier.getPolicy(policyId) };
     }
 
     // ---- GET /verifications?limit=50
@@ -62,10 +65,13 @@ export async function route(req: RouteRequest): Promise<RouteResult> {
       return { status: 200, body: { verifications: await verifier.getRecentVerifications(limit) } };
     }
 
-    // ---- GET /verification/:id
-    const verifMatch = path.match(/^\/verification\/(.+)$/);
-    if (method === "GET" && verifMatch) {
-      return { status: 200, body: await verifier.getVerification(verifMatch[1]) };
+    // ---- GET /verification?id=:id
+    if (method === "GET" && path === "/verification") {
+      const verificationId = req.search.get("id");
+      if (!verificationId) {
+        return { status: 400, body: { error: "id query param is required" } };
+      }
+      return { status: 200, body: await verifier.getVerification(verificationId) };
     }
 
     // ---- POST /verify

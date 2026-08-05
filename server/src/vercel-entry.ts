@@ -9,7 +9,11 @@
  *
  * Reads and fast submits work within Vercel limits; consensus-waiting
  * endpoints (POST /verify/wait) may exceed the function timeout, so clients
- * should POST /verify (fast) and poll GET /verification/:id.
+ * should POST /verify (fast) and poll GET /verification?id=:id.
+ *
+ * NOTE: Vercel's catch-all only matches single-segment /api/* paths, so
+ * resource lookups use query params (GET /verification?id=, GET /policy?id=)
+ * instead of sub-paths.
  */
 
 import { route, CONTRACT } from "./handler.js";
