@@ -1,6 +1,7 @@
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from genlayer import *
@@ -193,6 +194,53 @@ def build_orchestration_prompt(question: str, policy_json: str, evidence: str) -
     )
 
 
+def _norm_url(url: str) -> str:
+    """Normalize a URL for binding comparisons (case-keep, strip trailing slash)."""
+    return str(url).strip().rstrip("/")
+
+
+def _url_bound(cited: str, submitted: list) -> bool:
+    """True when a cited URL is one of the submitted URLs (or a path-boundary
+    prefix of one). Binds every source claim to evidence that was actually
+    submitted and fetched."""
+    c = _norm_url(cited)
+    if not c:
+        return False
+    for s in submitted:
+        s = _norm_url(s)
+        if c == s:
+            return True
+        if s.startswith(c) and len(s) > len(c) and s[len(c)] in "/?&":
+            return True
+    return False
+
+
+def _cited_urls(text: str) -> list:
+    """Extract URL-like tokens from free text."""
+    if not text:
+        return []
+    return re.findall(r"https?://[^\s'\"\\,;\]\)}]+", str(text))
+
+
+def _source_category(url: str, policy: dict, ok: bool) -> tuple:
+    """Deterministic source category/authority derived from the policy's
+    origins and whether the submitted URL actually fetched — never from LLM
+    claims, so source authority cannot be fabricated."""
+    required = str(policy.get("required_origin") or "").rstrip("/")
+    allowed = [str(a).rstrip("/") for a in (policy.get("allowed_origins") or [])]
+    if required and url.startswith(required):
+        return "PRIMARY", "HIGH"
+    if allowed:
+        if url.startswith(allowed[0]):
+            return "PRIMARY", "HIGH"
+        if any(url.startswith(a) for a in allowed):
+            return "SECONDARY", "MEDIUM"
+        return "UNVERIFIED", "LOW"
+    # No origin constraints in policy: a successfully fetched submitted URL
+    # is the primary evidence source.
+    return ("PRIMARY", "HIGH") if ok else ("UNVERIFIED", "LOW")
+
+
 def aggregate(
     policy: dict,
     research: dict,
@@ -201,6 +249,7 @@ def aggregate(
     analyst: dict,
     skeptic: dict,
     fetched: list,
+    submitted_urls: list,
 ) -> dict:
     policy_criteria = policy.get("criteria", [])
     rules = policy.get(
@@ -208,6 +257,10 @@ def aggregate(
         {"min_sources": 2, "primary_source_required": True},
     )
     min_sources = int(rules.get("min_sources", 2))
+
+    submitted = [_norm_url(u) for u in submitted_urls]
+    ok_urls = {_norm_url(f.get("url", "")) for f in fetched if f.get("ok")}
+    fetched_urls = {_norm_url(f.get("url", "")) for f in fetched}
 
     analyst_criteria = analyst.get("criteria", [])
     criteria_map = {}
@@ -236,28 +289,24 @@ def aggregate(
     sources = []
     if isinstance(raw_sources, list):
         for s in raw_sources:
-            if isinstance(s, dict):
-                sources.append(
-                    {
-                        "url": to_str(s.get("url")),
-                        "category": to_str(s.get("category")),
-                        "authority": to_str(s.get("authority")),
-                        "notes": to_str(s.get("notes")),
-                    }
+            url = to_str(s.get("url") if isinstance(s, dict) else s)
+            if not _url_bound(url, submitted):
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} source URL not in submitted evidence set: {url}"
                 )
-            else:
-                sources.append(
-                    {
-                        "url": to_str(s),
-                        "category": "",
-                        "authority": "",
-                        "notes": "",
-                    }
-                )
+            ok = _norm_url(url) in ok_urls
+            category, authority = _source_category(url, policy, ok)
+            sources.append(
+                {
+                    "url": url,
+                    "category": category,
+                    "authority": authority,
+                    "notes": to_str(s.get("notes")) if isinstance(s, dict) else "",
+                }
+            )
     ok_sources = [f for f in fetched if f.get("ok")]
     has_primary = any(
-        isinstance(s, dict)
-        and str(s.get("category", "")).upper() == "PRIMARY"
+        _norm_url(s["url"]) in ok_urls and s["category"] == "PRIMARY"
         for s in sources
     )
 
@@ -322,6 +371,22 @@ def aggregate(
     research_summary = str(research.get("summary", ""))
     analyst_summary = str(analyst.get("summary", ""))
     reasoning = " | ".join(p for p in [research_summary, analyst_summary] if p)
+
+    # Bind free-text citations: every URL mentioned in any claim, reason, or
+    # challenge must be one of the actually-submitted URLs.
+    claim_texts = [research_summary, analyst_summary]
+    for c in criteria_results:
+        claim_texts.append(c.get("reason", ""))
+    for ch in challenges:
+        claim_texts.append(ch.get("issue", ""))
+    for key in ("corroborated", "contradictions", "unverified"):
+        claim_texts.append(to_str(fact_check.get(key) or ""))
+    for text in claim_texts:
+        for cited in _cited_urls(text):
+            if not _url_bound(cited, submitted):
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} cited URL not in submitted evidence set: {cited}"
+                )
 
     return {
         "decision": decision,
@@ -411,6 +476,19 @@ def consensus_equivalent(leader: dict, mine: dict, policy: dict) -> bool:
         if not criteria_agree(a, b):
             return False
 
+    # 3b. Every mandatory criterion must be reported by BOTH validators and
+    # agree. A validator may not skip a mandatory criterion.
+    for pc in policy.get("criteria", []):
+        if not pc.get("mandatory", True):
+            continue
+        cid = pc.get("id")
+        a = leader_criteria.get(cid)
+        b = mine_criteria.get(cid)
+        if a is None or b is None:
+            return False
+        if not criteria_agree(a, b):
+            return False
+
     # 4. Deterministic evidence counters (fetch-derived)
     leader_sum = leader.get("evidence_summary", {})
     mine_sum = mine.get("evidence_summary", {})
@@ -446,6 +524,7 @@ class VerificationRecord:
     disputes_json: str
     revisions_json: str
     reasoning_summary: str
+    submitted_urls_json: str
     created_at: str
     expires_at: str
     version: u256
@@ -531,7 +610,7 @@ class VerificationEngine(gl.Contract):
             ):
                 raise gl.vm.UserError(f"{ERROR_LLM} orchestration response has invalid sections")
             return aggregate(
-                policy, research, source_quality, fact_check, analyst, skeptic, fetched
+                policy, research, source_quality, fact_check, analyst, skeptic, fetched, urls
             )
 
         def validator_fn(leaders_res: gl.vm.Result) -> bool:
@@ -607,6 +686,7 @@ class VerificationEngine(gl.Contract):
             disputes_json="[]",
             revisions_json="[]",
             reasoning_summary=result["reasoning_summary"],
+            submitted_urls_json=json.dumps(urls, default=str),
             created_at=now,
             expires_at=expires,
             version=u256(1),
@@ -658,6 +738,7 @@ class VerificationEngine(gl.Contract):
             "disputes": self._safe_json(v.disputes_json),
             "revisions": self._safe_json(v.revisions_json),
             "reasoning_summary": v.reasoning_summary,
+            "submitted_urls": self._safe_json(v.submitted_urls_json),
             "created_at": v.created_at,
             "expires_at": v.expires_at,
             "version": int(v.version),
@@ -722,6 +803,7 @@ class VerificationEngine(gl.Contract):
                     "sources": self._safe_json(v.sources_json),
                     "criteria": self._safe_json(v.criteria_json),
                     "evidence": self._safe_json(v.evidence_json),
+                    "submitted_urls": self._safe_json(v.submitted_urls_json),
                     "reasoning_summary": v.reasoning_summary,
                     "timestamp": self._now(),
                 }
@@ -744,6 +826,7 @@ class VerificationEngine(gl.Contract):
         )
         v.challenges_json = json.dumps(result["challenges"], default=str)
         v.reasoning_summary = result["reasoning_summary"]
+        v.submitted_urls_json = json.dumps(urls, default=str)
         v.created_at = self._now()
         v.version = u256(int(v.version) + 1)
         self.verifications[verification_id] = v

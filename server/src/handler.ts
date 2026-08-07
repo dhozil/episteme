@@ -92,7 +92,7 @@ export async function route(req: RouteRequest): Promise<RouteResult> {
       if (!body.question || !body.policyId || !Array.isArray(body.urls)) {
         return { status: 400, body: { error: "question, policyId, urls (array) are required" } };
       }
-      const { txHash, receipt, executed } = await verifier.verifyAndWait({
+      const { txHash, receipt, executed, verificationId } = await verifier.verifyAndWait({
         question: body.question,
         policyId: body.policyId,
         urls: body.urls,
@@ -100,8 +100,13 @@ export async function route(req: RouteRequest): Promise<RouteResult> {
       if (!executed) {
         return { status: 502, body: { txHash, error: executionError(receipt) ?? "consensus rejected" } };
       }
-      const newest = await verifier.getRecentVerifications(1);
-      return { status: 200, body: { txHash, verification: newest[0] ?? null } };
+      // Use the verification id returned by the transaction, never "the newest
+      // record" — concurrent submissions must resolve their own record.
+      if (!verificationId) {
+        return { status: 502, body: { txHash, error: "transaction did not return a verification id" } };
+      }
+      const verification = await verifier.getVerification(verificationId);
+      return { status: 200, body: { txHash, verificationId, verification } };
     }
 
     // ---- POST /challenge

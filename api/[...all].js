@@ -38348,7 +38348,12 @@ var Verifier = class {
   async verifyAndWait(options) {
     const { txHash } = await this.verify(options);
     const receipt = await this.waitForReceipt(txHash);
-    return { txHash, receipt, executed: isExecutionSuccess(receipt) };
+    return {
+      txHash,
+      receipt,
+      executed: isExecutionSuccess(receipt),
+      verificationId: txReturnValue(receipt)
+    };
   }
   /** Raw on-chain transaction (consensus votes, rounds, result). */
   getTransaction(txHash) {
@@ -38368,6 +38373,18 @@ function executionError(receipt) {
   const leader = receipt?.consensus_data?.leader_receipt?.[0];
   const err = leader?.genvm_result?.raw_error ?? leader?.genvm_result?.error_description;
   return err ? String(err) : null;
+}
+function txReturnValue(receipt) {
+  const leader = receipt?.consensus_data?.leader_receipt?.[0];
+  const readable = leader?.result?.payload?.readable;
+  if (typeof readable === "string" && readable.length > 0) {
+    try {
+      return JSON.parse(readable);
+    } catch {
+      return readable.replace(/^"|"$/g, "");
+    }
+  }
+  return null;
 }
 function sleep2(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -38424,7 +38441,7 @@ async function route(req) {
       if (!body.question || !body.policyId || !Array.isArray(body.urls)) {
         return { status: 400, body: { error: "question, policyId, urls (array) are required" } };
       }
-      const { txHash, receipt, executed } = await verifier.verifyAndWait({
+      const { txHash, receipt, executed, verificationId } = await verifier.verifyAndWait({
         question: body.question,
         policyId: body.policyId,
         urls: body.urls
@@ -38432,8 +38449,11 @@ async function route(req) {
       if (!executed) {
         return { status: 502, body: { txHash, error: executionError(receipt) ?? "consensus rejected" } };
       }
-      const newest = await verifier.getRecentVerifications(1);
-      return { status: 200, body: { txHash, verification: newest[0] ?? null } };
+      if (!verificationId) {
+        return { status: 502, body: { txHash, error: "transaction did not return a verification id" } };
+      }
+      const verification = await verifier.getVerification(verificationId);
+      return { status: 200, body: { txHash, verificationId, verification } };
     }
     if (method === "POST" && path === "/challenge") {
       if (!body.verificationId || !body.reason) {

@@ -273,10 +273,20 @@ export class Verifier {
 
   async verifyAndWait(
     options: VerifyOptions,
-  ): Promise<{ txHash: string; receipt: TxReceipt; executed: boolean }> {
+  ): Promise<{
+    txHash: string;
+    receipt: TxReceipt;
+    executed: boolean;
+    verificationId: string | null;
+  }> {
     const { txHash } = await this.verify(options);
     const receipt = await this.waitForReceipt(txHash);
-    return { txHash, receipt, executed: isExecutionSuccess(receipt) };
+    return {
+      txHash,
+      receipt,
+      executed: isExecutionSuccess(receipt),
+      verificationId: txReturnValue(receipt),
+    };
   }
 
   /** Raw on-chain transaction (consensus votes, rounds, result). */
@@ -307,6 +317,24 @@ export function executionError(receipt: TxReceipt): string | null {
   const leader = receipt?.consensus_data?.leader_receipt?.[0];
   const err = leader?.genvm_result?.raw_error ?? leader?.genvm_result?.error_description;
   return err ? String(err) : null;
+}
+
+/**
+ * The contract method's return value decoded from the leader receipt
+ * (e.g. verify_with_policy returns the verification id). Concurrent
+ * submissions must use this id — never "the newest record".
+ */
+export function txReturnValue(receipt: TxReceipt): string | null {
+  const leader = receipt?.consensus_data?.leader_receipt?.[0];
+  const readable = leader?.result?.payload?.readable;
+  if (typeof readable === "string" && readable.length > 0) {
+    try {
+      return JSON.parse(readable) as string;
+    } catch {
+      return readable.replace(/^"|"$/g, "");
+    }
+  }
+  return null;
 }
 
 function sleep(ms: number): Promise<void> {

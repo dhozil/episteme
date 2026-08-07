@@ -24,7 +24,7 @@ async function main() {
   check("exactly 5 built-in policies, no extras", ids.length === 5 && expected.every((x) => ids.includes(x)), JSON.stringify(ids));
 
   console.log("\n== 2. verify_with_policy (service-status -> PASS) ==");
-  const { txHash, receipt, executed } = await verifier.verifyAndWait({
+  const { txHash, receipt, executed, verificationId } = await verifier.verifyAndWait({
     question: "Is the open-meteo weather API reachable and returning valid, current data right now?",
     policyId: "service-status-v1",
     urls: [OM_API, "https://open-meteo.com/en"],
@@ -34,11 +34,11 @@ async function main() {
   const resultName = tx?.result_name ?? "?";
   const votes = ((tx?.last_round?.validator_votes) ?? []).map((v: string) => VOTE[String(v)] ?? String(v));
   check("consensus MAJORITY_AGREE", resultName === "MAJORITY_AGREE", `${resultName} votes=${JSON.stringify(votes)}`);
-  const newest = await verifier.getRecentVerifications(1);
-  const rec = newest[0];
+  const rec = verificationId ? await verifier.getVerification(verificationId) : null;
+  check("tx returned a verification id", Boolean(verificationId), String(verificationId));
   check("decision is PASS or NEEDS_REVIEW (positive)", ["PASS", "NEEDS_REVIEW"].includes(rec?.decision ?? ""), rec?.decision);
-  const vid = rec?.verification_id;
-  check("record stored", Boolean(vid), JSON.stringify(vid));
+  if (!verificationId) throw new Error("transaction did not return a verification id");
+  const vid = verificationId;
 
   console.log("\n== 3. challenge (public) ==");
   let r: any = await verifier.challenge({ verificationId: vid, reason: "Evidence snapshot may be stale" });

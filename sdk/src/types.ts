@@ -85,6 +85,8 @@ export interface VerificationRecord {
   disputes: Dispute[];
   revisions: Revision[];
   reasoning_summary: string;
+  /** The exact URLs that were submitted and fetched for this record. */
+  submitted_urls: string[];
   created_at: string;
   expires_at: string;
   version: number;
@@ -140,6 +142,12 @@ export interface TxReceipt {
       genvm_result?: {
         raw_error?: string | null;
         error_description?: string | null;
+      };
+      /** Decoded return value of the executed contract method. */
+      result?: {
+        payload?: {
+          readable?: string;
+        };
       };
     }>;
   };

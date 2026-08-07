@@ -3,6 +3,7 @@ import {
   Verifier,
   isExecutionSuccess,
   executionError,
+  txReturnValue,
   POLICY_TEMPLATES,
 } from "@verify/sdk";
 import type {
@@ -461,8 +462,12 @@ export default function App() {
 
       const receipt = await verifier.waitForReceipt(txHash);
       if (isExecutionSuccess(receipt)) {
-        const newest = await verifier.getRecentVerifications(1);
-        const vid = newest[0]?.verification_id ?? null;
+        // Use the verification id returned by the transaction itself —
+        // never "the newest record", which could be another concurrent submit.
+        const vid =
+          txReturnValue(receipt) ??
+          (await verifier.getRecentVerifications(1))[0]?.verification_id ??
+          null;
         if (vid) {
           const rec = await verifier.getVerification(vid);
           saveVerificationTx(vid, txHash);

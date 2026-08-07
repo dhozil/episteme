@@ -145,6 +145,62 @@ def test_verify_pass(direct_vm, direct_deploy, direct_alice):
     assert v["evidence"]["summary"]["rules_satisfied"] is True
     assert len(v["criteria"]) == 5
     assert all(c["result"] == "PASS" for c in v["criteria"])
+    assert v["submitted_urls"] == URLS
+
+
+def test_record_binds_sources_to_submitted_urls(direct_vm, direct_deploy, direct_alice):
+    contract = direct_deploy("contracts/verification_engine.py")
+    direct_vm.sender = direct_alice
+    _setup_mocks(direct_vm)
+    vid = _verify(direct_vm, contract)
+    v = contract.get_verification(vid)
+    # Source category/authority are derived from the policy origins + actual
+    # fetched URL, never from LLM claims.
+    s = v["sources"][0]
+    assert s["url"] == URLS[0]
+    assert s["category"] == "PRIMARY"
+    assert s["authority"] == "HIGH"
+    # Evidence counters reflect what was actually fetched.
+    assert v["evidence"]["summary"]["sources_ok"] >= 1
+
+
+def test_verify_rejects_fabricated_source(direct_vm, direct_deploy, direct_alice):
+    contract = direct_deploy("contracts/verification_engine.py")
+    direct_vm.sender = direct_alice
+    _setup_mocks(
+        direct_vm,
+        payload=_payload(
+            source={
+                "sources": [
+                    {
+                        "url": "https://evil-example.com/fake-repo",
+                        "category": "PRIMARY",
+                        "authority": "HIGH",
+                        "notes": "Fabricated",
+                    }
+                ],
+                "overall_quality": "x",
+            }
+        ),
+    )
+    with direct_vm.expect_revert("not in submitted evidence set"):
+        _verify(direct_vm, contract)
+
+
+def test_verify_rejects_fabricated_citation(direct_vm, direct_deploy, direct_alice):
+    contract = direct_deploy("contracts/verification_engine.py")
+    direct_vm.sender = direct_alice
+    _setup_mocks(
+        direct_vm,
+        payload=_payload(
+            research={
+                "findings": [],
+                "summary": "Corroborated at https://evil-example.com/claim",
+            }
+        ),
+    )
+    with direct_vm.expect_revert("cited URL not in submitted evidence set"):
+        _verify(direct_vm, contract)
 
 
 def test_verify_insufficient_evidence(direct_vm, direct_deploy, direct_alice):
@@ -163,18 +219,27 @@ def test_verify_insufficient_evidence(direct_vm, direct_deploy, direct_alice):
 def test_verify_missing_primary_source(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/verification_engine.py")
     direct_vm.sender = direct_alice
-    secondary = dict(DEFAULT_SOURCE)
-    secondary["sources"] = [
-        {
-            "url": URLS[0],
-            "category": "SECONDARY",
-            "authority": "MEDIUM",
-            "notes": "Reputable reporting",
-        }
-    ]
-    _setup_mocks(direct_vm, payload=_payload(source=secondary))
+    # gitlab.com is an allowed origin but not the policy's primary origin.
+    secondary_url = "https://gitlab.com/example/group"
+    _setup_mocks(
+        direct_vm,
+        urls=[secondary_url],
+        payload=_payload(
+            source={
+                "sources": [
+                    {
+                        "url": secondary_url,
+                        "category": "SECONDARY",
+                        "authority": "MEDIUM",
+                        "notes": "Reputable reporting",
+                    }
+                ],
+                "overall_quality": "reliable but secondary",
+            }
+        ),
+    )
 
-    vid = _verify(direct_vm, contract)
+    vid = _verify(direct_vm, contract, urls=[secondary_url])
     v = contract.get_verification(vid)
 
     assert v["decision"] == "INSUFFICIENT_EVIDENCE"
@@ -443,7 +508,30 @@ INS_URLS = [
 def _insurance_mocks(vm):
     for u in INS_URLS:
         vm.mock_web(_url_pattern(u), {"status": 200, "body": "Flight status data."})
-    vm.mock_llm(r"five agent roles", json.dumps(_payload()))
+    vm.mock_llm(
+        r"five agent roles",
+        json.dumps(
+            _payload(
+                source={
+                    "sources": [
+                        {
+                            "url": INS_URLS[0],
+                            "category": "PRIMARY",
+                            "authority": "HIGH",
+                            "notes": "Required flight tracker",
+                        },
+                        {
+                            "url": INS_URLS[1],
+                            "category": "SECONDARY",
+                            "authority": "MEDIUM",
+                            "notes": "Secondary flight tracker",
+                        },
+                    ],
+                    "overall_quality": "good",
+                }
+            )
+        ),
+    )
 
 
 def test_insurance_policy_hardened(direct_vm, direct_deploy):
@@ -519,6 +607,8 @@ def test_reverify_preserves_revision_history(direct_vm, direct_deploy, direct_al
     assert rev["decision"] == v1["decision"]
     assert rev["sources"] == v1["sources"]
     assert rev["evidence"] == v1["evidence"]
+    assert rev["submitted_urls"] == URLS
+    assert v2["submitted_urls"] == URLS
 
 
 # ----------------------------------------------------------------------

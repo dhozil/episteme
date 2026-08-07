@@ -15,7 +15,7 @@
 <p align="center">
   <img alt="Consensus" src="https://img.shields.io/badge/consensus-MAJORITY__AGREE-2f8f5b" />
   <img alt="Accuracy" src="https://img.shields.io/badge/accuracy-8%2F8%20eval-2f8f5b" />
-  <img alt="Tests" src="https://img.shields.io/badge/tests-31%20passing-2f8f5b" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-42%20passing-2f8f5b" />
   <img alt="Chain" src="https://img.shields.io/badge/chain-GenLayer%20Studionet-243a5e" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-243a5e" />
 </p>
@@ -160,6 +160,18 @@ designed so **no party — not even the deployer — can manipulate a result**:
 - **No open policy registration.** Policies are immutable and seeded at deploy;
   updating a policy means deploying a new contract version. Nothing can be
   overwritten, and no one can impersonate a policy.
+- **Consensus on every mandatory criterion.** Validators must report and agree
+  on *each* mandatory criterion of the policy — a validator cannot skip one.
+- **Sources bound to what was actually submitted.** Every source and every
+  URL cited in a reason, challenge, or fact-check claim must be one of the
+  submitted URLs; source `category`/`authority` are derived deterministically
+  from the policy's origins, never from an LLM claim.
+- **Original URLs preserved.** Each record stores the exact submitted URLs
+  (also in every revision), so re-verification and concurrent submissions
+  resolve the correct record.
+- **Tx-returned verification id.** The SDK/API read the verification id from
+  the transaction's return value — never "the newest record" — so concurrent
+  submissions cannot pick the wrong record.
 - **Owner-only re-verification.** An external caller cannot replace a record's
   evidence; only the record owner can refresh it, and every prior version's
   evidence is **preserved in revision history**.
@@ -184,9 +196,11 @@ designed so **no party — not even the deployer — can manipulate a result**:
 
 We test like the platform deserves:
 
-- **31 direct-mode tests**, run 3× consecutively — including adversarial cases
+- **42 direct-mode tests**, run 3× consecutively — including adversarial cases
   (duplicate register rejected, non-owner re-verify rejected, double dispute
-  rejected, irrelevant evidence → `FAIL`, `allowed_origins` enforcement).
+  rejected, irrelevant evidence → `FAIL`, `allowed_origins` enforcement,
+  fabricated-source and fabricated-citation rejection, mandatory-criterion
+  consensus).
 - **On-chain consensus probe:** every evaluated case reached **`MAJORITY_AGREE`**
   in round 1 with 4–5 validator votes.
 - **Accuracy evaluation against ground truth (8/8):** positive cases → `PASS` /

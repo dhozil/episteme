@@ -69,12 +69,11 @@ async function main() {
 
   for (const c of CASES) {
     try {
-      const { txHash, executed } = await verifier.verifyAndWait({ question: c.question, policyId: c.policy, urls: c.urls });
+      const { txHash, executed, verificationId } = await verifier.verifyAndWait({ question: c.question, policyId: c.policy, urls: c.urls });
       const tx = await verifier.getTransaction(txHash);
       const resultName = tx?.result_name ?? "?";
       const votes = ((tx?.last_round?.validator_votes) ?? []).map((v: string) => VOTE[String(v)] ?? String(v));
-      const newest = await verifier.getRecentVerifications(1);
-      const rec = newest[0];
+      const rec = verificationId ? await verifier.getVerification(verificationId) : null;
       const ok = executed && isCorrect(rec?.decision ?? "", c.expect);
       if (ok) correct++;
       if (executed && resultName === "MAJORITY_AGREE") consensusAgree++;

@@ -7,7 +7,7 @@ async function main() {
   console.log("Contract:", CONTRACT);
   console.log("policy: company-status-v1, sources: open-meteo (no rate limit)");
 
-  const { txHash, executed } = await v.verifyAndWait({
+  const { txHash, executed, verificationId } = await v.verifyAndWait({
     question: "Is the open-meteo weather service actively operating?",
     policyId: "company-status-v1",
     urls: [
@@ -16,9 +16,9 @@ async function main() {
     ],
   });
   console.log("executed:", executed, "tx:", txHash);
+  if (!verificationId) throw new Error("transaction did not return a verification id");
 
-  const ids = await v.getMyVerifications();
-  const rec = await v.getVerification(ids[ids.length - 1]);
+  const rec = await v.getVerification(verificationId);
   console.log("id:", rec.verification_id, "| decision:", rec.decision, "| status:", rec.status, "| confidence:", rec.confidence, "%");
   console.log("criteria:", rec.criteria.map((c) => `${c.id}:${c.result}`).join(" "));
   console.log("sources_ok:", rec.evidence.summary.sources_ok, "/", rec.evidence.summary.sources_fetched, "| primary:", rec.evidence.summary.primary_source, "| rules:", rec.evidence.summary.rules_satisfied);
