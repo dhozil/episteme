@@ -1011,7 +1011,7 @@ function VerificationView({
           <code>{record.verification_id}</code>
           <StatusBadge status={record.status} />
           <span className="muted">v{record.version}</span>
-          {txHash && (
+          {txHash ? (
             <a
               className="tx-link"
               href={`https://explorer-studio.genlayer.com/tx/${txHash}`}
@@ -1021,6 +1021,10 @@ function VerificationView({
             >
               View transaction ↗
             </a>
+          ) : (
+            <span className="muted" title="The transaction hash is only stored in the browser that submitted this verification.">
+              tx not tracked in this browser
+            </span>
           )}
         </div>
         <div className="verdict">
