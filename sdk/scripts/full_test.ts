@@ -73,10 +73,17 @@ async function main() {
   await verifyClass(verifier, "dao positive", "Is the Uniswap DAO UNIfication proposal active and substantiated for treasury funding?", "dao-proposal-v1", ["https://gov.uniswap.org/t/unification-proposal/25881", "https://gov.uniswap.org/t/temp-check-activate-v4-protocol-fees/26162"], "positive");
 
   console.log("\n== D. Dispute / versioning ==");
-  // Owner-scoped list avoids picking another account's concurrently-created record.
-  const vids = await verifier.getMyVerifications();
-  const vid = vids[vids.length - 1];
-  check("got a record", Boolean(vid), JSON.stringify(vids));
+  // Fresh service record so the challenge/reverify URLs match the policy.
+  // The id comes from the transaction's return value (concurrent-safe).
+  const vid = await verifyClass(
+    verifier,
+    "service (dispute fixture)",
+    "Is the open-meteo weather API reachable and returning valid, current data right now?",
+    "service-status-v1",
+    [OM_API, "https://open-meteo.com/en"],
+    "positive",
+  );
+  check("got a record", Boolean(vid), String(vid));
   if (vid) {
     await submitExpect(verifier, () => verifier.challenge({ verificationId: vid, reason: "Snapshot may be stale" }), "challenge", false);
     const c1 = await verifier.getVerification(vid);
@@ -87,6 +94,7 @@ async function main() {
     const c2 = await verifier.getVerification(vid);
     check("version bumped", c2.version >= 2, `v${c2.version}`);
     check("revision history", Array.isArray(c2.revisions) && c2.revisions.length >= 1, JSON.stringify(c2.revisions?.length));
+    check("revision preserves submitted urls", JSON.stringify(c2.revisions?.[0]?.submitted_urls) === JSON.stringify([OM_API, "https://open-meteo.com/en"]), JSON.stringify(c2.revisions?.[0]?.submitted_urls));
     check("summary", typeof (await verifier.getVerificationSummary(vid)) === "string");
   }
 

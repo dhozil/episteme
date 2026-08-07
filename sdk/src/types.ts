@@ -49,6 +49,8 @@ export interface Revision {
     fact_check: FactCheck;
   };
   reasoning_summary: string;
+  /** The exact submitted URLs for that revision's investigation. */
+  submitted_urls: string[];
   timestamp: string;
 }
 

@@ -1,7 +1,7 @@
 import { Verifier, isExecutionSuccess } from "../src/index";
 import { createAccount } from "genlayer-js";
 
-const CONTRACT = process.argv[2] || "0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff";
+const CONTRACT = process.argv[2] || "0x8934dfd22A3CF8082B443AF80786da2EFE646f08";
 const OM_API =
   "https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current=temperature_2m,relative_humidity_2m&timezone=auto";
 

@@ -85,6 +85,7 @@ function normalizeRecord(r: any): VerificationRecord {
     challenges: Array.isArray(r.challenges) ? r.challenges : [],
     disputes: Array.isArray(r.disputes) ? r.disputes : [],
     revisions: Array.isArray(r.revisions) ? r.revisions : [],
+    submitted_urls: Array.isArray(r.submitted_urls) ? r.submitted_urls : [],
     evidence:
       r.evidence && typeof r.evidence === "object"
         ? {

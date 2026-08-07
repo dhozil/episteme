@@ -2,7 +2,7 @@ import { Verifier } from "@verify/sdk";
 
 const CONTRACT =
   (import.meta.env.VITE_CONTRACT_ADDRESS as string | undefined) ??
-  "0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff";
+  "0x8934dfd22A3CF8082B443AF80786da2EFE646f08";
 
 const RPC =
   (import.meta.env.VITE_RPC_URL as string | undefined) ??

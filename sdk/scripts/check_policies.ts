@@ -1,6 +1,6 @@
 import { Verifier } from "../src/index";
 
-const CONTRACT = process.argv[2] || "0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff";
+const CONTRACT = process.argv[2] || "0x8934dfd22A3CF8082B443AF80786da2EFE646f08";
 
 async function main() {
   const v = new Verifier({ contractAddress: CONTRACT });

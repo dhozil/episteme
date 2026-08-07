@@ -12,7 +12,7 @@ import {
 
 export const CONTRACT =
   process.env.SERVER_CONTRACT ??
-  "0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff";
+  "0x8934dfd22A3CF8082B443AF80786da2EFE646f08";
 const RPC = process.env.SERVER_RPC ?? "https://studio.genlayer.com/api";
 
 export const verifier = new Verifier({

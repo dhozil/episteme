@@ -38391,7 +38391,7 @@ function sleep2(ms) {
 }
 
 // server/src/handler.ts
-var CONTRACT = process.env.SERVER_CONTRACT ?? "0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff";
+var CONTRACT = process.env.SERVER_CONTRACT ?? "0x8934dfd22A3CF8082B443AF80786da2EFE646f08";
 var RPC = process.env.SERVER_RPC ?? "https://studio.genlayer.com/api";
 var verifier = new Verifier({
   contractAddress: CONTRACT,

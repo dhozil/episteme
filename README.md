@@ -23,7 +23,7 @@
 <p align="center">
   <a href="https://episteme-verify.vercel.app"><strong>episteme-verify.vercel.app</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://explorer-studio.genlayer.com/address/0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff">Contract <code>0xE5C9A821…c17760ff</code> on GenLayer Studionet</a>
+  <a href="https://explorer-studio.genlayer.com/address/0x8934dfd22A3CF8082B443AF80786da2EFE646f08">Contract <code>0x8934dfd2…E646f08</code> on GenLayer Studionet</a>
 </p>
 
 ---
@@ -273,7 +273,7 @@ transaction in the explorer directly from the decision record.
 
 **Live on Studionet:**
 
-- **Contract:** [`0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff`](https://explorer-studio.genlayer.com/address/0xE5C9A821b0Fa27Fe8d8DE0e74a55C0fdc17760ff) — deployed with the five built-in policies; reuse it or deploy your own below.
+- **Contract:** [`0x8934dfd22A3CF8082B443AF80786da2EFE646f08`](https://explorer-studio.genlayer.com/address/0x8934dfd22A3CF8082B443AF80786da2EFE646f08) — deployed with the five built-in policies; reuse it or deploy your own below.
 - **REST API:** `https://episteme-verify.vercel.app/api` — `GET /health`, `GET /policies`, `GET /verifications?limit=`, `GET /verification?id=`, `GET /policy?id=`, `POST /verify`, `POST /challenge`, `POST /reverify`.
 
 **Deploy your own contract:**
